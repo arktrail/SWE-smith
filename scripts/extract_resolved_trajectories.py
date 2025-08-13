@@ -67,12 +67,14 @@ def load_resolved_ids_from_report(report_path: str) -> Set[str]:
         return set()
 
 
-def find_trajectory_folders(trajectories_base: str, resolved_ids: Set[str]) -> Dict[str, str]:
+def find_trajectory_folders(trajectories_base: str, resolved_ids: Set[str], updated_tools: bool = False) -> Dict[str, str]:
     """Find trajectory folders for resolved instance IDs."""
     trajectory_map = {}
+
+    subset_pattern = "subset*_2000" if not updated_tools  else "subset*_2000_updated_tools" 
     
     # Search through all subset folders
-    for subset_dir in Path(trajectories_base).glob("subset*_2000"):
+    for subset_dir in Path(trajectories_base).glob(subset_pattern):
         if not subset_dir.is_dir():
             continue
             
@@ -126,6 +128,10 @@ def main():
                        help="Output directory for copied trajectories")
     parser.add_argument("--resolved-ids-file", 
                        help="Optional: JSON file with resolved IDs (like paste.txt)")
+    parser.add_argument("--updated-tools", 
+                        action="store_true",
+                        default=False,
+                        help="if to parse from updated tools")
     
     args = parser.parse_args()
     
@@ -142,6 +148,8 @@ def main():
     
     # Collect all resolved IDs
     all_resolved_ids = set()
+
+    subset_pattern = "subset*_2000" if not args.updated_tools  else "subset*_2000_updated_tools" 
     
     # If a specific file with resolved IDs is provided, use that
     if args.resolved_ids_file:
@@ -151,7 +159,7 @@ def main():
         # Otherwise, scan all report.json files
         print("Scanning report.json files for resolved instances...")
         
-        for subset_dir in logs_path.glob("subset*_2000"):
+        for subset_dir in logs_path.glob(subset_pattern):
             if not subset_dir.is_dir():
                 continue
                 
@@ -170,7 +178,7 @@ def main():
     
     # Find corresponding trajectory folders
     print("\nSearching for trajectory folders...")
-    trajectory_map = find_trajectory_folders(str(trajectories_path), all_resolved_ids)
+    trajectory_map = find_trajectory_folders(str(trajectories_path), all_resolved_ids, args.updated_tools)
     
     print(f"\nFound trajectory folders for {len(trajectory_map)} out of {len(all_resolved_ids)} resolved instances")
     
